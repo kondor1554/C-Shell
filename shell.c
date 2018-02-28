@@ -1,4 +1,4 @@
-// code fore lab ///
+// code for lab ///
 // Konrad Kurzynowski kkurzy4_hw3
 
 #include <stdio.h>
@@ -100,63 +100,51 @@ void eval(char* cmdline)
   {
     if ((pid = Fork()) == 0)
     {
-      if (execvp(argv[0], argv) < 0)
+      for(i=0;argv[i]!='\0';i++)
       {
-	for(i=0;argv[i]!='\0';i++)
+        if(strcmp(argv[i],"<")==0)      // check for input redirection
         {
-          if(strcmp(argv[i],"<")==0)      // check for input redirection
-	  {
-            //argv[i]=NULL;
-            strcpy(input,argv[i+1]);
-            in=1;           
-          }               
-          if(strcmp(argv[i],">")==0)      // check for output redirection
-          {      
-            //argv[i]=NULL;
-            strcpy(output,argv[i+1]);
-            out=1;
-          }
-	  if(strcmp(argv[i],">>")==0)      // check for output redirection
+	  printf("Input redirected from : %s\n", argv[i+1]);
+          argv[i]=NULL;
+	  if ((fd0 = open(argv[i+1], O_RDONLY, 0)) < 0)
           {
-            //argv[i]=NULL;
-            strcpy(output,argv[i+1]);
-            out=2;
-          }         
-        }
-	if (in)
-	{
-	  if ((fd0 = open(input, O_RDONLY, 0)) < 0) 
-	  {
             perror("Couldn't open input file");
             exit(0);
-          }           
-          // dup2() copies content of fd0 in input of preceeding file
-          dup2(fd0, 0); // STDIN_FILENO here can be replaced by 0 
+          }
+          // dup2() copies contents of STDIN_FILENO to fd0
+          dup2(fd0, STDIN_FILENO); // STDIN_FILENO here can be replaced by 0
           close(fd0); // necessary
-	}
-	if (out)
-    	{
-	  if (out == 2)
-	  {
-	    if ((fd2 = open(output, O_RDWR|O_APPEND, 0)) < 0)
-            {
+        }
+        if(strcmp(argv[i],">")==0)      // check for output redirection
+        {
+	  printf("Output redirected to : %s\n", argv[i+1]);
+          argv[i]=NULL;
+          if ((fd1 = open(argv[i+1], O_CREAT|O_WRONLY|O_TRUNC, 0644)) < 0)
+          {
+            perror("Couldn't create the output file");
+            exit(0);
+          }
+          dup2(fd1, STDOUT_FILENO); // 1 here can be replaced by STDOUT_FILENO
+	  close(fd1);
+	  execvp(argv[0], argv);
+        }
+        if(strcmp(argv[i],">>")==0)      // check for output redirection
+        {
+	  printf("Output appended to : %s\n", argv[i+1]);
+          argv[i]=NULL;
+          if ((fd2 = open(argv[i+1], O_WRONLY|O_APPEND, 0)) < 0)
+          {
             perror("Couldn't open output file");
             exit(0);
-            }
-	    dup2(fd2, STDOUT_FILENO); // 1 here can be replaced by STDOUT_FILENO
-            close(fd2);
-	  }
-	  else
-	  {
-            if ((fd1 = creat(output , 0644)) < 0) 
-	    {
-              perror("Couldn't open the output file");
-              exit(0);
-            }
-	    dup2(fd1, STDOUT_FILENO); // 1 here can be replaced by STDOUT_FILENO
-            close(fd1);           
-    	  }
-        } 
+          }
+          dup2(fd2, STDOUT_FILENO); // 1 here can be replaced by STDOUT_FILENO
+          close(fd2);
+        }
+      } 
+      if (execvp(argv[0], argv) < 0)
+      {
+        perror("Couldn't execute arguments");
+        exit(0); 
       } 
     }
     else
