@@ -114,6 +114,7 @@ void eval(char* cmdline)
           // dup2() copies contents of STDIN_FILENO to fd0
           dup2(fd0, STDIN_FILENO); // STDIN_FILENO here can be replaced by 0
           close(fd0); // necessary
+	  execvp(argv[0], argv);
         }
         if(strcmp(argv[i],">")==0)      // check for output redirection
         {
@@ -141,11 +142,11 @@ void eval(char* cmdline)
           close(fd2);
         }
       } 
-      if (execvp(argv[0], argv) < 0)
-      {
+      execvp(argv[0], argv);
+      /**{
         perror("Couldn't execute arguments");
         exit(0); 
-      } 
+      }**/ 
     }
     else
     {
